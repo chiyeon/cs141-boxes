@@ -49,7 +49,7 @@ impl Chunk {
                 return self.blocks[y+1][x][z];
             },
             YN => {
-                //if y == 0 { return AIR; }
+                if y == 1  { return AIR; }
                 return self.blocks[y-1][x][z];
             },
             XP => {
@@ -116,7 +116,6 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
 
 
     // if there is any voxel in our "line of view" just don't render us
-    /*
     let mut x2 = x + 1;
     let mut z2 = z + 1;
     let mut y2 = y + 1;
@@ -126,7 +125,6 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
         z2 += 1;
         y2 += 1;
     }
-    */
 
     // top
     if chunk.get_neighbor(x, y, z, YP) == AIR { 
@@ -225,7 +223,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
     let perlin = Simplex::new(1);
 
     let chunk_start: i32 = -1;
-    let chunk_end: i32 = 2;
+    let chunk_end: i32 = 3;
     for x in -1..2 {
         for z in -1..2 {
             //if (x == -2 && z == -2) || (x == 1 && z == 1) { continue; }
@@ -328,7 +326,6 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
 
         // Going 3d!
 
-        /*
         position = vec3(100., 100., 100.);
         set_camera(&Camera3D {
             position: position,
@@ -337,16 +334,15 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
             fovy: 21.,
             ..Default::default()
         });
-        */
 
+        /*
         set_camera(&Camera3D {
             position: position,
             up: up,
             target: position + front,
             ..Default::default()
         });
-
-        draw_grid(20, 1., BLACK, GRAY);
+        */
 
         for chunk in chunks.clone() {
             for x in 1..CHUNK_SIZE+1 {
@@ -354,7 +350,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                     for y in 1..CHUNK_SIZE+1 {
                         draw_voxel(
                             x, y, z,
-                            chunk.clone()
+                            chunk
                         );                      
                     }
                 }
