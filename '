@@ -426,7 +426,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                 position: position,
                 up: Vec3::Y,
                 projection: Projection::Orthographics,
-                fovy: 42.,
+                fovy: 46.,
                 ..Default::default()
             });
         }
