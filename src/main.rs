@@ -18,6 +18,7 @@ const WOOD: Voxel = 3;
 const LEAF: Voxel = 4;
 const LEAF_RED: Voxel = 5;
 const LEAF_GREEN: Voxel = 6;
+const SAND: Voxel = 7;
 
 const YP: i32 = 0;
 const YN: i32 = 1;
@@ -114,6 +115,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
         LEAF => color = vec3(252., 186., 3.),
         LEAF_RED => color = vec3(223.,57.,8.),
         LEAF_GREEN => color = vec3(167., 159., 15.),
+        SAND => color = vec3(233., 225., 194.),
         default => color = vec3(0., 0., 0.),
     }
 
@@ -239,6 +241,10 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
     let chunk_start: i32 = -2;
     let chunk_end: i32 = 2;
     let island_radius = 26;
+    let island_radius_roughness = 6; // roughness at which edges of island circle are
+    let island_blend_start = 0.6;  // start blending terrain to 0 at X% from center
+    let island_beach_start = 0.7;  // switch to beach biome (sand) at X% from center
+    let island_beach_edge_randomness = 1.5; // number of blocks (forwards AND backwards) to variate
     for x in chunk_start..chunk_end {
         for z in chunk_start..chunk_end {
             //if (x == -2 && z == -2) || (x == 1 && z == 1) { continue; }
@@ -252,26 +258,42 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
             };
             for i in 1..CHUNK_SIZE + 1 {
                 for j in 1..CHUNK_SIZE + 1 {
+                    let mut voxel: Voxel = GRASS;
                     let fx = x as i32 * CHUNK_SIZE as i32 + i as i32;
                     let fz = z as i32 * CHUNK_SIZE as i32 + j as i32;
-                    let magnitude = ((fx * fx + fz + fz) as f32).sqrt();
+                    let magnitude = ((fx * fx + fz * fz) as f32).sqrt();
 
-                    if fx.pow(2) + fz.pow(2) > (island_radius * island_radius) { continue; }
+                    // shape our island into a rough circle
+                    if fx.pow(2) + fz.pow(2) > (island_radius * island_radius) + rand::gen_range(-island_radius_roughness, island_radius_roughness) { continue; }
 
                     //println!("{}", perlin.get([(i * 10) as f64, (j * 10) as f64]));
-                    let y: usize = ((perlin.get([
+                    let mut ny = ((perlin.get([
                         fx as f64 / 10., 
                         fz as f64 / 10.
-                    ]) * 4.0 + 4.0) * (1. - magnitude as f64 / (island_radius as f64 * 1.25))).floor() as usize;
+                    ]) * 4.0 + 4.0));
+
+                    if magnitude > island_radius as f32 * island_blend_start {
+                        ny *= (island_radius as f32 - magnitude) as f64 / (island_radius as f32 * island_blend_start) as f64;
+                        
+                        // start beaches on edges, slightly more inward than when we start blending
+                        // terrain
+                        if magnitude + rand::gen_range(-island_beach_edge_randomness, island_beach_edge_randomness) > island_radius as f32 * island_beach_start {
+                            voxel = SAND;
+                        }
+                    }
+
+                    let y = ny.floor() as usize;
+
                     if y == 0 { continue; }
-                    chunk.blocks[y][i][j] = GRASS;
+
+                    chunk.blocks[y][i][j] = voxel;
                     for z in 1..y {
                         chunk.blocks[z][i][j] = DIRT;
                     }
 
                     let min_tree_height = 4;
                     let max_tree_height = 10;
-                    if rand::gen_range(0, 50) == 0 {
+                    if rand::gen_range(0, 50) == 0 && voxel == GRASS {
                         let tree_height = rand::gen_range(min_tree_height, max_tree_height);
                         for z in (y+1)..(y+tree_height) {
                             chunk.blocks[z][i][j] = WOOD;
@@ -281,10 +303,10 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                         let tree_color = rand::gen_range(0, 3);
 
                         chunk.blocks[y+tree_height][i][j] = colors[tree_color];
-                        chunk.blocks[y+tree_height-1][i+1][j] = colors[tree_color];
-                        chunk.blocks[y+tree_height-1][i-1][j] = colors[tree_color];
-                        chunk.blocks[y+tree_height-1][i][j+1] = colors[tree_color];
-                        chunk.blocks[y+tree_height-1][i][j-1] = colors[tree_color];
+                        if i != CHUNK_SIZE { chunk.blocks[y+tree_height-1][i+1][j] = colors[tree_color]; }
+                        if i != 1 { chunk.blocks[y+tree_height-1][i-1][j] = colors[tree_color]; }
+                        if j != CHUNK_SIZE { chunk.blocks[y+tree_height-1][i][j+1] = colors[tree_color]; }
+                        if j != 1 { chunk.blocks[y+tree_height-1][i][j-1] = colors[tree_color]; }
                     }
                 }
             }
@@ -404,7 +426,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                 position: position,
                 up: Vec3::Y,
                 projection: Projection::Orthographics,
-                fovy: 28.,
+                fovy: 22.,
                 ..Default::default()
             });
         }
@@ -423,7 +445,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
         }
 
         // draw water
-        draw_plane(vec3(0., -1., 0.), vec2(50., 50.), None, color_u8!(116,204,244,255));
+        draw_plane(vec3(0., -1., 0.), vec2(100., 100.), None, color_u8!(116,204,244,150));
 
         set_default_camera();
         draw_text(
