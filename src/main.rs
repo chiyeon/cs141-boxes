@@ -115,6 +115,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
     let color_z = color_u8!(color.x * 0.7, color.y * 0.7, color.z * 0.7, 255);
 
 
+    /*
     // if there is any voxel in our "line of view" just don't render us
     let mut x2 = x + 1;
     let mut z2 = z + 1;
@@ -125,6 +126,8 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
         z2 += 1;
         y2 += 1;
     }
+
+    */
 
     // top
     if chunk.get_neighbor(x, y, z, YP) == AIR { 
@@ -226,7 +229,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
 
     let chunk_start: i32 = -1;
     let chunk_end: i32 = 1;
-    let island_radius = 16;
+    let island_radius = 14;
     for x in chunk_start..chunk_end {
         for z in chunk_start..chunk_end {
             //if (x == -2 && z == -2) || (x == 1 && z == 1) { continue; }
@@ -267,16 +270,18 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
             let index: usize = (x * (chunk_end - chunk_start) + z) as usize;
             if index >= chunks.len() { continue; }
 
+            /*
             //if x != chunk_start {
                 for i in 1..CHUNK_SIZE { 
                     for j in 0..CHUNK_SIZE {
-                        chunks[index].blocks[i][0][j] = DIRT;
-                        chunks[index].blocks[i][CHUNK_SIZE+1][j] = DIRT;
+                        if x != chunk_end - 1 { chunks[index].blocks[i][0][j] = chunks[((x + 1) * (chunk_end - chunk_start) + z) as usize].blocks[i][1][j]; }
+                        if x != chunk_start { chunks[index].blocks[i][CHUNK_SIZE+1][j] = chunks[((x - 1) * (chunk_end - chunk_start) + z) as usize].blocks[i][CHUNK_SIZE][j]; }
                         chunks[index].blocks[i][j][0] = DIRT;
                         chunks[index].blocks[i][j][CHUNK_SIZE+1] = DIRT;
                     }
                 }
             //}
+            */
         }
     }
 
@@ -364,7 +369,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                 ..Default::default()
             });
         } else {
-            position = vec3(100., 100., 100.);
+            position = vec3(150., 150., 150.);
             set_camera(&Camera3D {
                 position: position,
                 up: Vec3::Y,
@@ -399,11 +404,18 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
             BLACK,
         );
         draw_text(
-            "TAB to switch cameras. ESC to free mouse.",
+            "TAB to switch cameras",
             10.0,
             48.0,
             30.0,
             BLACK,
+        );
+        draw_text(
+            "ESC to free mouse",
+            10.0,
+            48.0 + 28.,
+            30.0,
+            BLACK
         );
 
         next_frame().await
