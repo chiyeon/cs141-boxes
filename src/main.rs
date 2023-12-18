@@ -232,9 +232,9 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
     rand::srand(macroquad::miniquad::date::now() as _);
     let perlin = Perlin::new(rand::gen_range(0, 1000000));
 
-    let chunk_start: i32 = -1;
-    let chunk_end: i32 = 1;
-    let island_radius = 14;
+    let chunk_start: i32 = -2;
+    let chunk_end: i32 = 2;
+    let island_radius = 26;
     for x in chunk_start..chunk_end {
         for z in chunk_start..chunk_end {
             //if (x == -2 && z == -2) || (x == 1 && z == 1) { continue; }
@@ -258,7 +258,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                     let y: usize = ((perlin.get([
                         fx as f64 / 10., 
                         fz as f64 / 10.
-                    ]) * 4.0 + 3.0) * (1. - magnitude as f64 / (island_radius as f64 * 1.5))).floor() as usize;
+                    ]) * 4.0 + 4.0) * (1. - magnitude as f64 / (island_radius as f64 * 1.25))).floor() as usize;
                     if y == 0 { continue; }
                     chunk.blocks[y][i][j] = GRASS;
                     for z in 1..y {
