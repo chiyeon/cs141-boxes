@@ -229,9 +229,9 @@ let mut position = vec3(0.0, 10.0, 0.0);
 let mut last_mouse_position: Vec2 = mouse_position().into();
 
     
-    let mut grabbed = true;
+    let mut grabbed = false;
     set_cursor_grab(grabbed);
-    show_mouse(false);
+    show_mouse(!grabbed);
     
 
     let mut chunks: Vec<Chunk> = vec![];
@@ -340,7 +340,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
     loop {
         let delta = get_frame_time();
 
-        if is_key_pressed(KeyCode::Escape) {
+        if is_key_pressed(KeyCode::Escape) && freecam {
             grabbed = !grabbed;
             set_cursor_grab(grabbed);
             show_mouse(!grabbed);
@@ -386,7 +386,16 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
 
         if is_key_pressed(KeyCode::Tab) {
             freecam = !freecam;
-            if freecam { position = vec3(0., 10., 0.); } 
+            if freecam { 
+                position = vec3(0., 10., 0.);
+                grabbed = true;
+                set_cursor_grab(grabbed);
+                show_mouse(!grabbed);
+            } else {
+                grabbed = false;
+                set_cursor_grab(grabbed);
+                show_mouse(!grabbed);
+            }
         }
 
         clear_background(color_u8!(135, 206, 235, 255));
