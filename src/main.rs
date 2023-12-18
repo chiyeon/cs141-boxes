@@ -9,11 +9,13 @@ const MOVE_SPEED: f32 = 0.1;
 const LOOK_SPEED: f32 = 0.1;
 const CHUNK_SIZE: usize = 16;
 
-type Voxel = i32;
+type Voxel = u8;
 
 const AIR: Voxel = 0;
 const GRASS: Voxel = 1;
 const DIRT: Voxel = 2;
+const WOOD: Voxel = 3;
+const LEAF: Voxel = 4;
 
 const YP: i32 = 0;
 const YN: i32 = 1;
@@ -24,7 +26,7 @@ const ZN: i32 = 5;
 
 #[derive(Copy, Clone)]
 struct Chunk {
-    blocks: [[[i32; CHUNK_SIZE + 2]; CHUNK_SIZE + 2]; CHUNK_SIZE + 2],
+    blocks: [[[Voxel; CHUNK_SIZE + 2]; CHUNK_SIZE + 2]; CHUNK_SIZE + 2],
     x: i32,
     y: i32,
     z: i32,
@@ -106,6 +108,8 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
     match voxel {
         GRASS => color = vec3(144., 224., 72.),
         DIRT => color = vec3(79., 48., 43.),
+        WOOD => color = vec3(85., 51., 17.),
+        LEAF => color = vec3(167., 159., 15.),
         default => color = vec3(0., 0., 0.),
     }
 
@@ -230,7 +234,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
 
     let chunk_start: i32 = -1;
     let chunk_end: i32 = 1;
-    let island_radius = 16;
+    let island_radius = 14;
     for x in chunk_start..chunk_end {
         for z in chunk_start..chunk_end {
             //if (x == -2 && z == -2) || (x == 1 && z == 1) { continue; }
@@ -259,6 +263,20 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                     chunk.blocks[y][i][j] = GRASS;
                     for z in 1..y {
                         chunk.blocks[z][i][j] = DIRT;
+                    }
+
+                    let min_tree_height = 4;
+                    let max_tree_height = 10;
+                    if rand::gen_range(0, 50) == 0 {
+                        let tree_height = rand::gen_range(min_tree_height, max_tree_height);
+                        for z in (y+1)..(y+tree_height) {
+                            chunk.blocks[z][i][j] = WOOD;
+                        }
+                        chunk.blocks[y+tree_height][i][j] = LEAF;
+                        chunk.blocks[y+tree_height-1][i+1][j] = LEAF;
+                        chunk.blocks[y+tree_height-1][i-1][j] = LEAF;
+                        chunk.blocks[y+tree_height-1][i][j+1] = LEAF;
+                        chunk.blocks[y+tree_height-1][i][j-1] = LEAF;
                     }
                 }
             }
