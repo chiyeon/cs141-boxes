@@ -387,9 +387,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
         }
 
         // draw water
-        draw_plane(vec3(0., -1., 0.), vec2(50., 50.), None, BLUE);
-
-        // Back to screen space, render some text
+        draw_plane(vec3(0., -1., 0.), vec2(50., 50.), None, color_u8!(116,204,244,255));
 
         set_default_camera();
         draw_text(
