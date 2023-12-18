@@ -225,7 +225,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
     let perlin = Simplex::new(1);
 
     let chunk_start: i32 = -1;
-    let chunk_end: i32 = -2;
+    let chunk_end: i32 = 2;
     for x in -1..2 {
         for z in -1..2 {
             //if (x == -2 && z == -2) || (x == 1 && z == 1) { continue; }
@@ -237,8 +237,8 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                 z,
                 ..Default::default()
             };
-            for i in 1..CHUNK_SIZE - 1 {
-                for j in 1..CHUNK_SIZE - 1 {
+            for i in 1..CHUNK_SIZE + 1 {
+                for j in 1..CHUNK_SIZE + 1 {
                     //println!("{}", perlin.get([(i * 10) as f64, (j * 10) as f64]));
                     let mut y: usize = (perlin.get([
                         (x as f64 * CHUNK_SIZE as f64 + i as f64), 
@@ -259,11 +259,18 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
     for x in chunk_start..chunk_end {
         for z in chunk_start..chunk_end {
             let index: usize = (x * (chunk_end - chunk_start) + z) as usize;
-            if x != chunk_start {
-                for y in 1..CHUNK_SIZE - 1 {
-                    chunks[index].blocks[y][x-1 as usize] = chunks[((x - 1) * (chunk_end - chunk_start) + z) as usize].blocks[y][CHUNK_SIZE - 2 as usize];
+            if index >= chunks.len() { continue; }
+
+            //if x != chunk_start {
+                for i in 1..CHUNK_SIZE { 
+                    for j in 0..CHUNK_SIZE {
+                        chunks[index].blocks[i][0][j] = DIRT;
+                        chunks[index].blocks[i][CHUNK_SIZE+1][j] = DIRT;
+                        chunks[index].blocks[i][j][0] = DIRT;
+                        chunks[index].blocks[i][j][CHUNK_SIZE+1] = DIRT;
+                    }
                 }
-            }
+            //}
         }
     }
 
@@ -342,9 +349,9 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
         draw_grid(20, 1., BLACK, GRAY);
 
         for chunk in chunks.clone() {
-            for x in 1..CHUNK_SIZE-1 {
-                for z in 1..CHUNK_SIZE-1 {
-                    for y in 1..CHUNK_SIZE-1 {
+            for x in 1..CHUNK_SIZE+1 {
+                for z in 1..CHUNK_SIZE+1 {
+                    for y in 1..CHUNK_SIZE+1 {
                         draw_voxel(
                             x, y, z,
                             chunk.clone()
