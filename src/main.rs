@@ -24,7 +24,7 @@ const ZN: i32 = 5;
 
 #[derive(Copy, Clone)]
 struct Chunk {
-    blocks: [[[i32; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
+    blocks: [[[i32; CHUNK_SIZE + 2]; CHUNK_SIZE + 2]; CHUNK_SIZE + 2],
     x: i32,
     y: i32,
     z: i32,
@@ -33,7 +33,7 @@ struct Chunk {
 impl Default for Chunk {
     fn default() -> Chunk {
         Chunk {
-            blocks: [[[AIR; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
+            blocks: [[[AIR; CHUNK_SIZE + 2]; CHUNK_SIZE + 2]; CHUNK_SIZE + 2],
             x: 0,
             y: 0,
             z: 0,
@@ -45,27 +45,27 @@ impl Chunk {
     fn get_neighbor(&self, x: usize, y: usize, z: usize, loc: i32) -> Voxel {
         match loc {
             YP => {
-                if y == CHUNK_SIZE - 1 { return AIR; }
+                //if y == CHUNK_SIZE - 1 { return AIR; }
                 return self.blocks[y+1][x][z];
             },
             YN => {
-                if y == 0 { return AIR; }
+                //if y == 0 { return AIR; }
                 return self.blocks[y-1][x][z];
             },
             XP => {
-                if x == CHUNK_SIZE - 1 { return AIR; }
+                //if x == CHUNK_SIZE - 1 { return AIR; }
                 return self.blocks[y][x+1][z];
             },
             XN => {
-                if x == 0 { return AIR; }
+                //if x == 0 { return AIR; }
                 return self.blocks[y][x-1][z];
             },
             ZP => {
-                if z == CHUNK_SIZE - 1 { return AIR; }
+                //if z == CHUNK_SIZE - 1 { return AIR; }
                 return self.blocks[y][x][z+1];
             },
             ZN => {
-                if z == 0 { return AIR; }
+                //if z == 0 { return AIR; }
                 return self.blocks[y][x][z-1];
             },
             default => return AIR,
@@ -73,8 +73,8 @@ impl Chunk {
     }
 
     fn fill_layer(&mut self, layer: usize, voxel: Voxel) {
-        for x in 0..CHUNK_SIZE {
-            for z in 0..CHUNK_SIZE {
+        for x in 1..CHUNK_SIZE-1 {
+            for z in 1..CHUNK_SIZE-1 {
                 self.blocks[layer][x][z] = voxel;
             }
         }
@@ -95,9 +95,9 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
     let voxel = chunk.blocks[y][x][z];
 
     // x y and z are local. also calc our final pos
-    let xf: f32 = (chunk.x * CHUNK_SIZE as i32 + x as i32) as f32;
-    let zf: f32 = (chunk.z * CHUNK_SIZE as i32 + z as i32) as f32;
-    let yf: f32 = (chunk.y * CHUNK_SIZE as i32 + y as i32) as f32;
+    let xf: f32 = (chunk.x * CHUNK_SIZE as i32 + x as i32) as f32 - 2.0;
+    let zf: f32 = (chunk.z * CHUNK_SIZE as i32 + z as i32) as f32 - 2.0;
+    let yf: f32 = (chunk.y * CHUNK_SIZE as i32 + y as i32) as f32 - 2.0;
 
     if voxel == AIR { return; }
 
@@ -199,7 +199,6 @@ let mut x = 0.0;
 let mut switch = false;
 let bounds = 8.0;
 
-
 let world_up = vec3(0.0, 1.0, 0.0);
 let mut yaw: f32 = 1.18;
 let mut pitch: f32 = 0.0;
@@ -224,10 +223,13 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
 
     let mut chunks: Vec<Chunk> = vec![];
     let perlin = Simplex::new(1);
-        
-    for x in -2..2 {
-        for z in -2..2 {
-            if (x == -2 && z == -2) || (x == 1 && z == 2) { continue; }
+
+    let chunk_start: i32 = -1;
+    let chunk_end: i32 = -2;
+    for x in -1..2 {
+        for z in -1..2 {
+            //if (x == -2 && z == -2) || (x == 1 && z == 1) { continue; }
+            //if x == z { continue; }
             
 
             let mut chunk = Chunk {
@@ -235,21 +237,33 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                 z,
                 ..Default::default()
             };
-            for i in 0..CHUNK_SIZE {
-                for j in 0..CHUNK_SIZE {
+            for i in 1..CHUNK_SIZE - 1 {
+                for j in 1..CHUNK_SIZE - 1 {
                     //println!("{}", perlin.get([(i * 10) as f64, (j * 10) as f64]));
-                    let y: usize = (perlin.get([
+                    let mut y: usize = (perlin.get([
                         (x as f64 * CHUNK_SIZE as f64 + i as f64), 
                         (z as f64 * CHUNK_SIZE as f64 + j as f64)
-                    ]) * 4.0 +2.0).floor() as usize;
+                    ]) * 4.0 + 2.0).floor() as usize;
+                    if y == 0 { y = 1; }
                     chunk.blocks[y][i][j] = GRASS;
-                    for z in 0..y {
+                    for z in 1..y {
                         chunk.blocks[z][i][j] = DIRT;
                     }
                 }
             }
 
             chunks.push(chunk);
+        }
+    }
+
+    for x in chunk_start..chunk_end {
+        for z in chunk_start..chunk_end {
+            let index: usize = (x * (chunk_end - chunk_start) + z) as usize;
+            if x != chunk_start {
+                for y in 1..CHUNK_SIZE - 1 {
+                    chunks[index].blocks[y][x-1 as usize] = chunks[((x - 1) * (chunk_end - chunk_start) + z) as usize].blocks[y][CHUNK_SIZE - 2 as usize];
+                }
+            }
         }
     }
 
@@ -307,6 +321,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
 
         // Going 3d!
 
+        /*
         position = vec3(100., 100., 100.);
         set_camera(&Camera3D {
             position: position,
@@ -315,22 +330,21 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
             fovy: 21.,
             ..Default::default()
         });
+        */
 
-        /*
         set_camera(&Camera3D {
             position: position,
             up: up,
             target: position + front,
             ..Default::default()
         });
-        */
 
         draw_grid(20, 1., BLACK, GRAY);
 
         for chunk in chunks.clone() {
-            for x in 0..CHUNK_SIZE {
-                for z in 0..CHUNK_SIZE {
-                    for y in 0..CHUNK_SIZE {
+            for x in 1..CHUNK_SIZE-1 {
+                for z in 1..CHUNK_SIZE-1 {
+                    for y in 1..CHUNK_SIZE-1 {
                         draw_voxel(
                             x, y, z,
                             chunk.clone()
