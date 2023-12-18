@@ -196,6 +196,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
 
 #[macroquad::main(conf)]
 async fn main() {
+// camera stuff
 let mut freecam = false;
 let mut x = 0.0;
 let mut switch = false;
@@ -245,14 +246,15 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                 for j in 1..CHUNK_SIZE + 1 {
                     let fx = x as i32 * CHUNK_SIZE as i32 + i as i32;
                     let fz = z as i32 * CHUNK_SIZE as i32 + j as i32;
+                    let magnitude = ((fx * fx + fz + fz) as f32).sqrt();
 
                     if fx.pow(2) + fz.pow(2) > (island_radius * island_radius) { continue; }
 
                     //println!("{}", perlin.get([(i * 10) as f64, (j * 10) as f64]));
-                    let y: usize = (perlin.get([
+                    let y: usize = ((perlin.get([
                         fx as f64 / 10., 
                         fz as f64 / 10.
-                    ]) * 4.0 + 3.0).floor() as usize;
+                    ]) * 4.0 + 3.0) * (1. - magnitude as f64 / (island_radius as f64 * 1.5))).floor() as usize;
                     if y == 0 { continue; }
                     chunk.blocks[y][i][j] = GRASS;
                     for z in 1..y {
@@ -265,25 +267,24 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
         }
     }
 
+    /*
+    // occlude edges of chunks for better performance. minimal improvement.
     for x in chunk_start..chunk_end {
         for z in chunk_start..chunk_end {
             let index: usize = (x * (chunk_end - chunk_start) + z) as usize;
             if index >= chunks.len() { continue; }
 
-            /*
-            //if x != chunk_start {
-                for i in 1..CHUNK_SIZE { 
-                    for j in 0..CHUNK_SIZE {
-                        if x != chunk_end - 1 { chunks[index].blocks[i][0][j] = chunks[((x + 1) * (chunk_end - chunk_start) + z) as usize].blocks[i][1][j]; }
-                        if x != chunk_start { chunks[index].blocks[i][CHUNK_SIZE+1][j] = chunks[((x - 1) * (chunk_end - chunk_start) + z) as usize].blocks[i][CHUNK_SIZE][j]; }
-                        chunks[index].blocks[i][j][0] = DIRT;
-                        chunks[index].blocks[i][j][CHUNK_SIZE+1] = DIRT;
-                    }
+            for i in 1..CHUNK_SIZE { 
+                for j in 0..CHUNK_SIZE {
+                    if x != chunk_start { chunks[index].blocks[i][0][j] = chunks[((x + 1) * (chunk_end - chunk_start) + z) as usize].blocks[i][1][j]; }
+                    if x != chunk_end - 1 { chunks[index].blocks[i][CHUNK_SIZE+1][j] = chunks[((x - 1) * (chunk_end - chunk_start) + z) as usize].blocks[i][CHUNK_SIZE][j]; }
+                    chunks[index].blocks[i][j][0] = DIRT;
+                    chunks[index].blocks[i][j][CHUNK_SIZE+1] = DIRT;
                 }
-            //}
-            */
+            }
         }
     }
+    */
 
     loop {
         let delta = get_frame_time();
