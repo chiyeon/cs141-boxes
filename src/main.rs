@@ -49,7 +49,7 @@ impl Chunk {
                 return self.blocks[y+1][x][z];
             },
             YN => {
-                if y == 1  { return AIR; }
+                if y == 1  { return DIRT; }
                 return self.blocks[y-1][x][z];
             },
             XP => {
@@ -193,6 +193,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
 
 #[macroquad::main(conf)]
 async fn main() {
+let mut freecam = false;
 let mut x = 0.0;
 let mut switch = false;
 let bounds = 8.0;
@@ -220,12 +221,13 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
     
 
     let mut chunks: Vec<Chunk> = vec![];
-    let perlin = Simplex::new(1);
+    let perlin = Perlin::new(1);
 
     let chunk_start: i32 = -1;
-    let chunk_end: i32 = 3;
-    for x in -1..2 {
-        for z in -1..2 {
+    let chunk_end: i32 = 1;
+    let island_radius = 16;
+    for x in chunk_start..chunk_end {
+        for z in chunk_start..chunk_end {
             //if (x == -2 && z == -2) || (x == 1 && z == 1) { continue; }
             //if x == z { continue; }
             
@@ -237,10 +239,15 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
             };
             for i in 1..CHUNK_SIZE + 1 {
                 for j in 1..CHUNK_SIZE + 1 {
+                    let fx = x as i32 * CHUNK_SIZE as i32 + i as i32;
+                    let fz = z as i32 * CHUNK_SIZE as i32 + j as i32;
+
+                    if fx.pow(2) + fz.pow(2) > (island_radius * island_radius) { continue; }
+
                     //println!("{}", perlin.get([(i * 10) as f64, (j * 10) as f64]));
                     let mut y: usize = (perlin.get([
-                        (x as f64 * CHUNK_SIZE as f64 + i as f64), 
-                        (z as f64 * CHUNK_SIZE as f64 + j as f64)
+                        fx as f64, 
+                        fz as f64
                     ]) * 4.0 + 2.0).floor() as usize;
                     if y == 0 { y = 1; }
                     chunk.blocks[y][i][j] = GRASS;
@@ -276,14 +283,11 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
         let delta = get_frame_time();
 
         if is_key_pressed(KeyCode::Escape) {
-            break;
-        }
-        if is_key_pressed(KeyCode::Tab) {
             grabbed = !grabbed;
             set_cursor_grab(grabbed);
             show_mouse(!grabbed);
         }
-
+        
         if is_key_down(KeyCode::W) {
             position += front * MOVE_SPEED;
         }
@@ -322,18 +326,25 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
             switch = !switch;
         }
 
+        if is_key_pressed(KeyCode::Tab) {
+            freecam = !freecam;
+            if freecam { position = vec3(0., 10., 0.); } 
+        }
+
         clear_background(LIGHTGRAY);
 
         // Going 3d!
 
+/*
         position = vec3(100., 100., 100.);
         set_camera(&Camera3D {
             position: position,
             up: Vec3::Y,
             projection: Projection::Orthographics,
-            fovy: 21.,
+            fovy: 24.,
             ..Default::default()
         });
+        */
 
         /*
         set_camera(&Camera3D {
@@ -343,6 +354,24 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
             ..Default::default()
         });
         */
+
+        if freecam {
+            set_camera(&Camera3D {
+                position: position,
+                up: up,
+                target: position + front,
+                ..Default::default()
+            });
+        } else {
+            position = vec3(100., 100., 100.);
+            set_camera(&Camera3D {
+                position: position,
+                up: Vec3::Y,
+                projection: Projection::Orthographics,
+                fovy: 24.,
+                ..Default::default()
+            });
+        }
 
         for chunk in chunks.clone() {
             for x in 1..CHUNK_SIZE+1 {
@@ -356,6 +385,9 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                 }
             }
         }
+
+        // draw water
+        draw_plane(vec3(0., -1., 0.), vec2(50., 50.), None, BLUE);
 
         // Back to screen space, render some text
 
