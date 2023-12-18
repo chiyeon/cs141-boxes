@@ -1,6 +1,8 @@
 use macroquad::prelude::*;
 use macroquad::time::*;
 use macroquad::rand;
+
+use noise::{NoiseFn, Perlin, Simplex, Seedable};
 // use glam::vec3;
 
 const MOVE_SPEED: f32 = 0.1;
@@ -99,7 +101,22 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
 
     if voxel == AIR { return; }
 
+    let color: Vec3;
+
+    match voxel {
+        GRASS => color = vec3(144., 224., 72.),
+        DIRT => color = vec3(79., 48., 43.),
+        default => color = vec3(0., 0., 0.),
+    }
+
+    let color_top = color_u8!(color.x, color.y, color.z, 255);
+    let color_bottom = color_u8!(color.x * 0.6, color.y * 0.6, color.z * 0.6, 255);
+    let color_x = color_u8!(color.x * 0.9, color.y * 0.9, color.z * 0.9, 255);
+    let color_z = color_u8!(color.x * 0.7, color.y * 0.7, color.z * 0.7, 255);
+
+
     // if there is any voxel in our "line of view" just don't render us
+    /*
     let mut x2 = x + 1;
     let mut z2 = z + 1;
     let mut y2 = y + 1;
@@ -109,6 +126,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
         z2 += 1;
         y2 += 1;
     }
+    */
 
     // top
     if chunk.get_neighbor(x, y, z, YP) == AIR { 
@@ -117,7 +135,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
             Vec3::X,
             Vec3::Z,
             None,
-            color_u8!(144, 224, 72, 255) 
+            color_top
         );
     }
 
@@ -128,7 +146,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
             Vec3::X,
             Vec3::Y,
             None,
-            color_u8!(129, 201, 64, 255) 
+            color_z
         );
     }
     
@@ -138,7 +156,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
             Vec3::X,
             Vec3::Y,
             None,
-            color_u8!(129, 201, 64, 255) 
+            color_z
         );
     }
 
@@ -149,7 +167,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
             Vec3::Z,
             Vec3::Y,
             None,
-            color_u8!(115, 179, 57, 255) 
+            color_x
         );
     }
     
@@ -159,7 +177,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
             Vec3::Z,
             Vec3::Y,
             None,
-            color_u8!(115, 179, 57, 255) 
+            color_x
         );
     }
     
@@ -170,7 +188,7 @@ fn draw_voxel(x: usize, y: usize, z: usize, chunk: Chunk) {
             Vec3::X,
             Vec3::Z,
             None,
-            color_u8!(100, 156, 50, 255) 
+            color_bottom
         );
     }
 }
@@ -193,32 +211,41 @@ yaw.sin() * pitch.cos(),
 )
 .normalize();
 let mut right = front.cross(world_up).normalize();
-//let mut up;
+let mut up;
 
-let mut position = vec3(100.0, 100.0, 100.0);
+let mut position = vec3(0.0, 10.0, 0.0);
 let mut last_mouse_position: Vec2 = mouse_position().into();
 
-    /*
+    
     let mut grabbed = true;
     set_cursor_grab(grabbed);
     show_mouse(false);
-    */
+    
 
     let mut chunks: Vec<Chunk> = vec![];
+    let perlin = Simplex::new(1);
         
-    for x in -1..2 {
-        for z in -1..2 {
+    for x in -2..2 {
+        for z in -2..2 {
+            if (x == -2 && z == -2) || (x == 1 && z == 2) { continue; }
+            
+
             let mut chunk = Chunk {
                 x,
                 z,
                 ..Default::default()
             };
-            chunk.fill_layer(3, GRASS);
-            for i in 0..3 { chunk.fill_layer(i, DIRT); }
-
             for i in 0..CHUNK_SIZE {
                 for j in 0..CHUNK_SIZE {
-                    if rand::gen_range(0, 2) == 1 { chunk.blocks[4][i][j] = GRASS; }
+                    //println!("{}", perlin.get([(i * 10) as f64, (j * 10) as f64]));
+                    let y: usize = (perlin.get([
+                        (x as f64 * CHUNK_SIZE as f64 + i as f64), 
+                        (z as f64 * CHUNK_SIZE as f64 + j as f64)
+                    ]) * 4.0 +2.0).floor() as usize;
+                    chunk.blocks[y][i][j] = GRASS;
+                    for z in 0..y {
+                        chunk.blocks[z][i][j] = DIRT;
+                    }
                 }
             }
 
@@ -251,7 +278,6 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
             position += right * MOVE_SPEED;
         }
 
-        /*
         let mouse_position: Vec2 = mouse_position().into();
         let mouse_delta = mouse_position - last_mouse_position;
         last_mouse_position = mouse_position;
@@ -272,7 +298,6 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
         right = front.cross(world_up).normalize();
         up = right.cross(front).normalize();
 
-        */
         x += if switch { 0.04 } else { -0.04 };
         if x >= bounds || x <= -bounds {
             switch = !switch;
@@ -282,11 +307,12 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
 
         // Going 3d!
 
-
+        position = vec3(100., 100., 100.);
         set_camera(&Camera3D {
             position: position,
             up: Vec3::Y,
             projection: Projection::Orthographics,
+            fovy: 21.,
             ..Default::default()
         });
 
