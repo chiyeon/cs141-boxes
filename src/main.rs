@@ -230,7 +230,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
 
     let chunk_start: i32 = -1;
     let chunk_end: i32 = 1;
-    let island_radius = 20;
+    let island_radius = 16;
     for x in chunk_start..chunk_end {
         for z in chunk_start..chunk_end {
             //if (x == -2 && z == -2) || (x == 1 && z == 1) { continue; }
@@ -267,8 +267,8 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
         }
     }
 
-    /*
     // occlude edges of chunks for better performance. minimal improvement.
+    /*
     for x in chunk_start..chunk_end {
         for z in chunk_start..chunk_end {
             let index: usize = (x * (chunk_end - chunk_start) + z) as usize;
@@ -276,8 +276,11 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
 
             for i in 1..CHUNK_SIZE { 
                 for j in 0..CHUNK_SIZE {
-                    if x != chunk_start { chunks[index].blocks[i][0][j] = chunks[((x + 1) * (chunk_end - chunk_start) + z) as usize].blocks[i][1][j]; }
-                    if x != chunk_end - 1 { chunks[index].blocks[i][CHUNK_SIZE+1][j] = chunks[((x - 1) * (chunk_end - chunk_start) + z) as usize].blocks[i][CHUNK_SIZE][j]; }
+                    //if x != chunk_start { chunks[index].blocks[i][0][j] = chunks[((x + 1) * (chunk_end - chunk_start) + z) as usize].blocks[i][1][j]; }
+                    //if x != chunk_end - 1 { chunks[index].blocks[i][CHUNK_SIZE+1][j] = chunks[((x - 1) * (chunk_end - chunk_start) + z) as usize].blocks[i][CHUNK_SIZE][j]; }
+                    
+                    chunks[index].blocks[i][0][j] = DIRT;
+                    chunks[index].blocks[i][CHUNK_SIZE+1][j] = DIRT;
                     chunks[index].blocks[i][j][0] = DIRT;
                     chunks[index].blocks[i][j][CHUNK_SIZE+1] = DIRT;
                 }
