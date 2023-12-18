@@ -221,7 +221,8 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
     
 
     let mut chunks: Vec<Chunk> = vec![];
-    let perlin = Perlin::new(1);
+    rand::srand(macroquad::miniquad::date::now() as _);
+    let perlin = Perlin::new(rand::gen_range(0, 1000000));
 
     let chunk_start: i32 = -1;
     let chunk_end: i32 = 1;
@@ -245,11 +246,11 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                     if fx.pow(2) + fz.pow(2) > (island_radius * island_radius) { continue; }
 
                     //println!("{}", perlin.get([(i * 10) as f64, (j * 10) as f64]));
-                    let mut y: usize = (perlin.get([
-                        fx as f64, 
-                        fz as f64
-                    ]) * 4.0 + 2.0).floor() as usize;
-                    if y == 0 { y = 1; }
+                    let y: usize = (perlin.get([
+                        fx as f64 / 10., 
+                        fz as f64 / 10.
+                    ]) * 4.0 + 3.0).floor() as usize;
+                    if y == 0 { continue; }
                     chunk.blocks[y][i][j] = GRASS;
                     for z in 1..y {
                         chunk.blocks[z][i][j] = DIRT;
@@ -394,6 +395,13 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
             format!("FPS: {}", get_fps()).as_str(),
             10.0,
             20.0,
+            30.0,
+            BLACK,
+        );
+        draw_text(
+            "TAB to switch cameras. ESC to free mouse.",
+            10.0,
+            48.0,
             30.0,
             BLACK,
         );
