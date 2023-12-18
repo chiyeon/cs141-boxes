@@ -230,7 +230,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
 
     let chunk_start: i32 = -1;
     let chunk_end: i32 = 1;
-    let island_radius = 14;
+    let island_radius = 20;
     for x in chunk_start..chunk_end {
         for z in chunk_start..chunk_end {
             //if (x == -2 && z == -2) || (x == 1 && z == 1) { continue; }
@@ -375,7 +375,7 @@ let mut last_mouse_position: Vec2 = mouse_position().into();
                 position: position,
                 up: Vec3::Y,
                 projection: Projection::Orthographics,
-                fovy: 24.,
+                fovy: 28.,
                 ..Default::default()
             });
         }
